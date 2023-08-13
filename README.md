@@ -68,6 +68,8 @@ mail: 11111111
 
 sAMAccountName: user123
 
+sAMAccountName: Administrator
+
 [*]All organizational units (OU):
 
 ou: IT
