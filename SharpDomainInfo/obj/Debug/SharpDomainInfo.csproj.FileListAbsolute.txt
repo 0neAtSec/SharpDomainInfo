@@ -1,0 +1,8 @@
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\bin\Debug\SharpDomainInfo.exe
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\bin\Debug\SharpDomainInfo.pdb
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\SharpDomainInfo.csproj.AssemblyReference.cache
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\SharpDomainInfo.csproj.CoreCompileInputs.cache
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\SharpDomainInfo.exe
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\SharpDomainInfo.pdb
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\Interop.ActiveDs.dll
+C:\vs2019_code\SharpDomainInfo\SharpDomainInfo\obj\Debug\SharpDomainInfo.csproj.ResolveComReference.cache
