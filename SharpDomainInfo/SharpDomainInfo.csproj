@@ -46,6 +46,7 @@
     <Compile Include="Localquery.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Remotequery.cs" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="ActiveDs">

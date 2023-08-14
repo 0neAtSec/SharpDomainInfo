@@ -1,7 +1,9 @@
 # SharpDomainInfo
 域内自动化信息收集工具
 ## 简介
-根据攻防以及域信息收集经验dump快而有用的域信息(当前权限须在域内)
+根据攻防以及域信息收集经验dump快而有用的域信息
+
+可直接利用当前域权限或是提供连接信息查询
 
 ```
 域控dnshostname-ip
@@ -23,20 +25,21 @@ ADCS信息/ESC1 ESC8
 
 ## 使用说明
 ```
-SharpDomainInfo.exe -help
-
+SharpDomainInfo.exe
 [*]SharpDomainInfo.exe
     https://github.com/0neAtSec/SharpDomainInfo
 
 Usage:
     SharpDomainInfo.exe -help
-    SharpDomainInfo.exe -dump
-    execute-assembly /path/to/SharpDomainInfo.exe -dump
+    SharpDomainInfo.exe -localdump
+    SharpDomainInfo.exe -h dc-ip -u user -p password -d domain.com
+    execute-assembly /path/to/SharpDomainInfo.exe -localdump
 ```
 ## 示例
 
 ```
-SharpDomainInfo.exe -dump
+SharpDomainInfo.exe -localdump
+SharpDomainInfo.exe -h 192.168.149.132 -u tom -p 0ne@123456 -d ad.test
 
 [*]SharpDomainInfo.exe
     https://github.com/0neAtSec/SharpDomainInfo
@@ -67,8 +70,6 @@ mail: 11111111
 [*]Accounts Not Trusted for Delegation:
 
 sAMAccountName: user123
-
-sAMAccountName: Administrator
 
 [*]All organizational units (OU):
 
@@ -160,7 +161,7 @@ ESC1_test
 
 - ACL扫描
 - 其它信息收集
-- 域外信息收集
+- ~~域外连接查询~~
 
 ## 免责声明
 

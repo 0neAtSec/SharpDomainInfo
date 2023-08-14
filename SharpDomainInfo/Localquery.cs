@@ -50,7 +50,7 @@ namespace SharpDomainInfo
             }
         }
 
-        public static string getESC8(string url)
+        public static string geturl(string url)
         {
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -207,10 +207,7 @@ namespace SharpDomainInfo
                     }
                 }
 
-
-
                 Console.WriteLine("");
-
 
 
             }
@@ -255,8 +252,8 @@ namespace SharpDomainInfo
                 if (result.Properties.Contains("dNSHostName"))
                 {
                     string dNSHostName = (string)result.Properties["dNSHostName"][0];
-                    Console.WriteLine(dNSHostName);
-                    //Console.WriteLine(dNSHostName + " - " + QueryDnsRecords(ldapPath, dNSHostName));
+                    Console.WriteLine(dNSHostName + " - " + GetIPAddress(dNSHostName));
+                    
                 }
 
                 if (result.Properties.Contains("operatingSystem"))
@@ -379,7 +376,7 @@ namespace SharpDomainInfo
                     string ADCS_ip = GetIPAddress(dNSHostName);
                     string url = "http://" + ADCS_ip + "/certsrv/certfnsh.asp";
                     Console.WriteLine(dNSHostName + " - " + ADCS_ip);
-                    Console.WriteLine($"[{getESC8(url)}]" + url);
+                    Console.WriteLine($"[{geturl(url)}]" + url);
                     //Console.WriteLine(dNSHostName + " - " + QueryDnsRecords(ldapPath, dNSHostName));
                 }
 
@@ -428,8 +425,7 @@ namespace SharpDomainInfo
                 if (result.Properties.Contains("dNSHostName"))
                 {
                     string dNSHostName = (string)result.Properties["dNSHostName"][0];
-                    Console.WriteLine(dNSHostName);
-                    //Console.WriteLine(dNSHostName + " - " + QueryDnsRecords(ldapPath, dNSHostName));
+                    Console.WriteLine(dNSHostName + " - " + GetIPAddress(dNSHostName));
                 }
                 //operatingSystem
                 if (result.Properties.Contains("operatingSystem"))
