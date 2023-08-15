@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SharpDomainInfo
 {
@@ -93,23 +94,36 @@ namespace SharpDomainInfo
 
             if (args[0] == "-localdump")
             {
+                // 执行localdump操作
                 Localdump();
                 return;
-                
-            }
-            else if (args.Length == 8 && args[0] == "-h" && args[2] == "-u" && args[4] == "-p" && args[6] == "-d")
-            {
-                string ip = args[1];
-                string username = args[3];
-                string password = args[5];
-                string domain = args[7];
-
-                Remotedump(ip, domain, username, password);
             }
             else
             {
-                Console.WriteLine("Invalid arguments. Use -help for usage information.");
-                return;
+                Dictionary<string, string> arguments = new Dictionary<string, string>();
+                for (int i = 0; i < args.Length; i += 2)
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        arguments[args[i]] = args[i + 1];
+                    }
+                }
+
+                if (arguments.ContainsKey("-h") && arguments.ContainsKey("-u") && arguments.ContainsKey("-p") && arguments.ContainsKey("-d"))
+                {
+                    string ip = arguments["-h"];
+                    string username = arguments["-u"];
+                    string password = arguments["-p"];
+                    string domain = arguments["-d"];
+
+                    Remotedump(ip, domain, username, password);
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid arguments. Use -help for usage information.");
+                    return;
+                }
             }
 
 
