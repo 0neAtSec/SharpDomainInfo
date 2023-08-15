@@ -45,14 +45,17 @@ namespace SharpDomainInfo
             Remotequery.QueryLdap_RBCD(ldapPath, username, password);
             Remotequery.QueryLdap_createsid(ldapPath, username, password);
 
-            Remotequery.QueryLdap_getADCS(ldapPath2, ldapPathdns,username, password);
+            Remotequery.QueryLdap_getADCS(ldapPath2, ldapPathdns, username, password);
             Remotequery.QueryLdap_getESC1(ldapPath2, username, password);
+
+            Remotequery.QueryLdap_GetACLInfo(ldapPath, username, password);
 
         }
         static void Localdump()
         {
 
             string ldapPath = Localquery.GetLdapAddress();
+            //LDAP://AD.TEST/DC=AD,DC=TEST
 
             Localquery.QueryLdap_getDC(ldapPath);
             Localquery.QueryLdap_maq(ldapPath);
@@ -76,6 +79,7 @@ namespace SharpDomainInfo
             Localquery.QueryLdap_getADCS(ldapPath);
             Localquery.QueryLdap_getESC1(ldapPath);
 
+            Localquery.QueryLdap_GetACLInfo(ldapPath);
 
         }
         static void Banner()

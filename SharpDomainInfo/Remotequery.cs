@@ -11,12 +11,81 @@ namespace SharpDomainInfo
 {
     class Remotequery
     {
+
+
+        public static void QueryLdap_GetACLInfo(string ldapPath, string username, string password)
+        {
+            //先过滤返回rule.IdentityReference.Value 为name的
+
+            List<string> excludeList = new List<string> { "BUILTIN\\Administrators", "CREATOR OWNER", "Everyone", "NT AUTHORITY\\Authenticated Users", "NT AUTHORITY\\ENTERPRISE DOMAIN CONTROLLERS", "NT AUTHORITY\\SELF", "NT AUTHORITY\\SYSTEM", "S-1-5-32-548", "S-1-5-32-550", "S-1-5-32-554", "S-1-5-32-560", "S-1-5-32-561" };
+
+            //sid 转name后再过滤
+            List<string> excludeList_2 = new List<string> { "Enterprise Read-only Domain Controllers", "Cert Publishers", "Cloneable Domain Controllers", "Domain Admins", "Domain Controllers", "Enterprise Admins", "Enterprise Key Admins", "Enterprise Read", "Incoming Forest Trust Builders", "Key Admins" };
+            DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
+            DirectorySearcher searcher = new DirectorySearcher(entry);
+            searcher.Filter = "(&(objectClass=top)(|(objectClass=user)(objectClass=group)(objectClass=domainDNS)))";
+            Console.WriteLine("[*]ACL_info: ");
+            Console.WriteLine("");
+            SearchResultCollection results = searcher.FindAll();
+            foreach (SearchResult result in results)
+            {
+                if (result != null)
+                {
+                    DirectoryEntry userEntry = result.GetDirectoryEntry();
+                    AuthorizationRuleCollection rules = userEntry.ObjectSecurity.GetAccessRules(true, true, typeof(NTAccount));
+
+                    foreach (ActiveDirectoryAccessRule rule in rules)
+                    {
+
+                        if ((rule.AccessControlType == AccessControlType.Allow)&&(rule.ObjectType.Equals(new Guid("1131f6ad-9c07-11d1-f79f-00c04fc2dcd2")) || rule.ObjectType.Equals(new Guid("1131f6aa-9c07-11d1-f79f-00c04fc2dcd2")) || rule.ObjectType.Equals(new Guid("f3a64788-5306-11d1-a9c5-0000f80367c1")) || rule.ObjectType.Equals(new Guid("bf9679c0-0de6-11d0-a285-00aa003049e2")) || rule.ObjectType.Equals(new Guid("00299570-246d-11d0-a768-00aa006e0529")) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteProperty) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.Self) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.ExtendedRight) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteDacl) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericAll) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericWrite) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteOwner)))
+                        {
+                            //Console.WriteLine(rule.IdentityReference.Value);
+                            if (excludeList.Contains(rule.IdentityReference.Value, StringComparer.OrdinalIgnoreCase))
+                                continue;
+                            string name = GetSamAccountNameFromSid(ldapPath, username, password, rule.IdentityReference.Value);
+                            if (excludeList_2.Contains(name))
+                                continue;
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericAll))
+                                Console.WriteLine(name + " ----GenericAll ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericWrite))
+                                Console.WriteLine(name + " ----GenericWrite ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteOwner))
+                                Console.WriteLine(name + " ----WriteOwner ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteDacl))
+                                Console.WriteLine(name + " ----WriteDACL ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.ExtendedRight))
+                                Console.WriteLine(name + " ----AllExtendedRights ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.Self))
+                                Console.WriteLine(name + " ----Self ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteProperty))
+                                Console.WriteLine(name + " ----WriteProperty ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("00299570-246d-11d0-a768-00aa006e0529")))
+                                Console.WriteLine(name + " ----ForceChangePassword ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("bf9679c0-0de6-11d0-a285-00aa003049e2")))
+                                Console.WriteLine(name + " ----Self-Membership ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("f3a64788-5306-11d1-a9c5-0000f80367c1")))
+                                Console.WriteLine(name + " ----Validated-SPN ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("1131f6aa-9c07-11d1-f79f-00c04fc2dcd2")))
+                                Console.WriteLine(name + " ----DS-Replication-Get-Changes ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("1131f6ad-9c07-11d1-f79f-00c04fc2dcd2")))
+                                Console.WriteLine(name + " ----DS-Replication-Get-Changes-All ----> " + userEntry.Name);
+
+
+
+                        }
+
+                    }
+
+                }
+
+            }
+        }
         public static string geturl(string url)
         {
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.UserAgent = @"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36";
-            request.Timeout = 5000;
+            request.Timeout = 3000;
             try
             {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
@@ -53,7 +122,7 @@ namespace SharpDomainInfo
                 foreach (SearchResult result in searcher.FindAll())
                 {
                     // 处理结果
-                    
+
                     if (result.Properties.Contains("dnsRecord"))
                     {
                         foreach (byte[] dnsRecord in result.Properties["dnsRecord"])
@@ -80,7 +149,7 @@ namespace SharpDomainInfo
         public static void QueryLdap_getESC1(string ldapPath, string username, string password)
         {
             //ESC1
-            
+
             DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
             DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = @"(&(objectclass=pkicertificatetemplate)(!(mspki-enrollment-flag:1.2.840.113556.1.4.804:=2))(|(mspki-ra-signature=0)(!(mspki-ra-signature=*)))(|(pkiextendedkeyusage=1.3.6.1.4.1.311.20.2.2)(pkiextendedkeyusage=1.3.6.1.5.5.7.3.2)(pkiextendedkeyusage=1.3.6.1.5.2.3.4)(pkiextendedkeyusage=2.5.29.37.0)(!(pkiextendedkeyusage=*)))(mspki-certificate-name-flag:1.2.840.113556.1.4.804:=1)(!(cn=OfflineRouter))(!(cn=CA))(!(cn=SubCA)))";
@@ -98,7 +167,7 @@ namespace SharpDomainInfo
         public static void QueryLdap_getADCS(string ldapPath, string ldapPathdns, string username, string password)
         {
             //ADCS - ip
-            
+
             DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
             DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = "(&(objectCategory=pKIEnrollmentService))";
@@ -197,7 +266,7 @@ namespace SharpDomainInfo
             }
             else
             {
-                return null;
+                return "null";
             }
         }
         public static void QueryLdap_CDelegation(string ldapPath, string username, string password)
@@ -263,7 +332,7 @@ namespace SharpDomainInfo
                 {
                     string dNSHostName = (string)result.Properties["dNSHostName"][0];
                     Console.WriteLine(dNSHostName + " - " + QueryDnsRecords(ldapPathdns, username, password, dNSHostName));
-                    
+
                 }
                 //operatingSystem
                 if (result.Properties.Contains("operatingSystem"))
@@ -424,7 +493,7 @@ namespace SharpDomainInfo
         public static void QueryLdap_GetDomainAdmins(string ldapPath, string username, string password)
         {
             //Doamin Admins
-            DirectoryEntry entry = new DirectoryEntry(ldapPath,username,password);
+            DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
             DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = "(&(objectclass=group)(samaccountname=Domain Admins))";
             SearchResult result = searcher.FindOne();
@@ -453,7 +522,7 @@ namespace SharpDomainInfo
         {
             //ms-DS-MachineAccountQuota:
             string query = @"(ms-DS-MachineAccountQuota=*)";
-            DirectoryEntry entry = new DirectoryEntry(ldapPath,username,password);
+            DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
             DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = query;
             Console.WriteLine("[*]ms-DS-MachineAccountQuota:");
@@ -469,10 +538,10 @@ namespace SharpDomainInfo
             }
         }
 
-        public static void QueryLdap_getDC(string ldapPath, string ldapPathdns,string username,string password)
+        public static void QueryLdap_getDC(string ldapPath, string ldapPathdns, string username, string password)
         {
             //DCs - ip
-            DirectoryEntry entry = new DirectoryEntry(ldapPath,username,password);
+            DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password);
             DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = "(&(objectCategory=Computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))";
 

@@ -21,9 +21,35 @@ mS-DS-CreatorSID信息
 ADCS信息/ESC1 ESC8
 ```
 
+过滤的ACE类型
 
+```
+WriteDacl
+GenericAll
+GenericWrite
+WriteProperty
+WriteOwner
+Self
+Self-Membership bf9679c0-0de6-11d0-a285-00aa003049e2
+AllExtendedRights
+User-Force-Change-Password 00299570-246d-11d0-a768-00aa006e0529
+Validated-SPN  f3a64788-5306-11d1-a9c5-0000f80367c1
+DS-Replication-Get-Changes 1131f6aa-9c07-11d1-f79f-00c04fc2dcd2
+DS-Replication-Get-Changes-All 1131f6ad-9c07-11d1-f79f-00c04fc2dcd2
+```
+
+ACL扫描可能出现rule.IdentityReference.Value(ACL规则中的身份引用)无法输出或是一些默认存在的ACL规则未过滤
+
+```
+自己实际测试中，在域内主机上分别使用Localquery.QueryLdap_GetACLInfo(ldapPath)和Remotequery.QueryLdap_GetACLInfo(ldapPath, username, password), 返回的rule.IdentityReference.Value的类型有sid和名称。
+
+在域内主机Localquery.QueryLdap_GetACLInfo和域外主机Remotequery.QueryLdap_GetACLInfo测试 目前没问题
+
+后面再想办法改改【又不是不能用】
+```
 
 ## 使用说明
+
 ```
 SharpDomainInfo.exe
 [*]SharpDomainInfo.exe
@@ -153,13 +179,46 @@ ADCS-2012.AD.TEST - 192.168.149.138
 [*]ESC1-vulnerability-template:
 
 ESC1_test
+
+[*]ACL_info:
+
+AD\user ----AllExtendedRights ----> CN=pc
+AD\user ----WriteProperty ----> CN=pc
+AD\user ----Self ----> CN=pc
+AD\user ----Validated-SPN ----> CN=pc
+AD\user ----Self ----> CN=pc
+AD\user ----WriteProperty ----> CN=pc
+AD\user ----WriteProperty ----> CN=pc
+AD\user ----WriteProperty ----> CN=pc
+AD\user ----WriteProperty ----> CN=pc
+AD\acluser ----GenericWrite ----> CN=李四
+AD\acluser ----Self ----> CN=李四
+AD\acluser ----WriteProperty ----> CN=李四
+AD\tom ----AllExtendedRights ----> CN=李四
+AD\tom ----ForceChangePassword ----> CN=李四
+AD\lisi ----AllExtendedRights ----> CN=win12
+AD\lisi ----WriteProperty ----> CN=win12
+AD\lisi ----Self ----> CN=win12
+AD\lisi ----Validated-SPN ----> CN=win12
+AD\lisi ----Self ----> CN=win12
+AD\lisi ----WriteProperty ----> CN=win12
+AD\lisi ----WriteProperty ----> CN=win12
+AD\lisi ----WriteProperty ----> CN=win12
+AD\lisi ----WriteProperty ----> CN=win12
+AD\lisi ----GenericWrite ----> CN=普通用户
+AD\lisi ----Self ----> CN=普通用户
+AD\lisi ----WriteProperty ----> CN=普通用户
+AD\user221 ----AllExtendedRights ----> DC=AD
+AD\user221 ----DS-Replication-Get-Changes ----> DC=AD
+AD\user221 ----AllExtendedRights ----> DC=AD
+AD\user221 ----DS-Replication-Get-Changes-All ----> DC=AD
 ```
 
 
 
 ## TODO
 
-- ACL扫描
+- ~~ACL扫描~~
 - 其它信息收集
 - ~~域外连接查询~~
 

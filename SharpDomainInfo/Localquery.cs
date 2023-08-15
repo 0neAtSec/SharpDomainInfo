@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.DirectoryServices.ActiveDirectory;
@@ -25,7 +26,7 @@ namespace SharpDomainInfo
             }
             else
             {
-                return null;
+                return "null";
             }
         }
 
@@ -55,7 +56,7 @@ namespace SharpDomainInfo
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.UserAgent = @"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36";
-            request.Timeout = 5000;
+            request.Timeout = 3000;
             try
             {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
@@ -143,36 +144,80 @@ namespace SharpDomainInfo
                 if (result.Properties.Contains("sAMAccountName"))
                 {
                     SecurityIdentifier sid = new SecurityIdentifier((byte[])result.Properties["mS-DS-CreatorSID"][0], 0);
-                    Console.WriteLine($"{GetSamAccountNameFromSid(ldapPath,sid.Value)} -add-> {result.Properties["sAMAccountName"][0]}");
+                    Console.WriteLine($"{GetSamAccountNameFromSid(ldapPath, sid.Value)} -add-> {result.Properties["sAMAccountName"][0]}");
                 }
 
                 Console.WriteLine("");
             }
         }
 
+
         public static void QueryLdap_GetACLInfo(string ldapPath)
         {
-            DirectoryEntry entry = new DirectoryEntry(ldapPath);
-            AuthorizationRuleCollection rules = entry.ObjectSecurity.GetAccessRules(true, true, typeof(NTAccount));
 
-            foreach (ActiveDirectoryAccessRule rule in rules)
+            int startIndex = ldapPath.IndexOf("DC=") + 3;
+            int endIndex = ldapPath.IndexOf(",", startIndex);
+            string domainName = ldapPath.Substring(startIndex, endIndex - startIndex);
+
+            List<string> excludeList = new List<string> { "Everyone", "S-1-5-32-557", "S-1-5-32-561", "S-1-5-32-548", $"{domainName}\\Key Admins", $"{domainName}\\Enterprise Key Admins", $"{domainName}\\Cert Publishers", "CREATOR OWNER", "BUILTIN\\Account Operators", "BUILTIN\\Administrators", "BUILTIN\\Incoming Forest Trust Builders", "NT AUTHORITY\\Authenticated Users", "NT AUTHORITY\\ENTERPRISE DOMAIN CONTROLLERS", "NT AUTHORITY\\SELF", "NT AUTHORITY\\SYSTEM", $"{domainName}\\Cloneable Domain Controllers", $"{domainName}\\Domain Admins", $"{domainName}\\Domain Controllers", $"{domainName}\\Enterprise Admins", $"{domainName}\\Enterprise Read", $"{domainName}\\Enterprise Read-only Domain Controllers", "BUILTIN\\Terminal Server License Servers" };
+
+            DirectoryEntry entry = new DirectoryEntry(ldapPath);
+            DirectorySearcher searcher = new DirectorySearcher(entry);
+            searcher.Filter = "(&(objectClass=top)(|(objectClass=user)(objectClass=group)(objectClass=domainDNS)))";
+            Console.WriteLine("[*]ACL_info: ");
+            Console.WriteLine("");
+            SearchResultCollection results = searcher.FindAll();
+            foreach (SearchResult result in results)
             {
-                if (rule.IdentityReference.Value == "Everyone")
-                    continue;
-                if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericAll))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----GenericAll ----> " + entry.Name);
-                if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericWrite))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----GenericWrite ----> " + entry.Name);
-                if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteOwner))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----WriteOwner ----> " + entry.Name);
-                if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteDacl))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----WriteDACL ----> " + entry.Name);
-                if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.ExtendedRight))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----AllExtendedRights ----> " + entry.Name);
-                if (rule.ObjectType.Equals(new Guid("00299570-246d-11d0-a768-00aa006e0529")))
-                    Console.WriteLine(rule.IdentityReference.Value + " ----ForceChangePassword ----> " + entry.Name);
+                if (result != null)
+                {
+                    DirectoryEntry userEntry = result.GetDirectoryEntry();
+                    AuthorizationRuleCollection rules = userEntry.ObjectSecurity.GetAccessRules(true, true, typeof(NTAccount));
+
+                    foreach (ActiveDirectoryAccessRule rule in rules)
+                    {
+                        if ((rule.AccessControlType == AccessControlType.Allow) && (rule.ObjectType.Equals(new Guid("1131f6ad-9c07-11d1-f79f-00c04fc2dcd2")) || rule.ObjectType.Equals(new Guid("1131f6aa-9c07-11d1-f79f-00c04fc2dcd2")) || rule.ObjectType.Equals(new Guid("f3a64788-5306-11d1-a9c5-0000f80367c1")) || rule.ObjectType.Equals(new Guid("bf9679c0-0de6-11d0-a285-00aa003049e2")) || rule.ObjectType.Equals(new Guid("00299570-246d-11d0-a768-00aa006e0529")) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteProperty) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.Self) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.ExtendedRight) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteDacl) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericAll) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericWrite) || rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteOwner)))
+                        {
+
+                            if (excludeList.Contains(rule.IdentityReference.Value, StringComparer.OrdinalIgnoreCase))
+                                continue;
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericAll))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----GenericAll ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.GenericWrite))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----GenericWrite ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteOwner))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----WriteOwner ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteDacl))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----WriteDACL ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.ExtendedRight))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----AllExtendedRights ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.Self))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----Self ----> " + userEntry.Name);
+                            if (rule.ActiveDirectoryRights.HasFlag(ActiveDirectoryRights.WriteProperty))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----WriteProperty ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("00299570-246d-11d0-a768-00aa006e0529")))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----ForceChangePassword ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("bf9679c0-0de6-11d0-a285-00aa003049e2")))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----Self-Membership ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("f3a64788-5306-11d1-a9c5-0000f80367c1")))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----Validated-SPN ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("1131f6aa-9c07-11d1-f79f-00c04fc2dcd2")))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----DS-Replication-Get-Changes ----> " + userEntry.Name);
+                            if (rule.ObjectType.Equals(new Guid("1131f6ad-9c07-11d1-f79f-00c04fc2dcd2")))
+                                Console.WriteLine(rule.IdentityReference.Value + " ----DS-Replication-Get-Changes-All ----> " + userEntry.Name);
+
+                        }
+
+                    }
+
+                }
+
             }
         }
+
+
+
+
         public static void QueryLdap_RBCD(string ldapPath)
         {
             //find RBCD
@@ -253,7 +298,7 @@ namespace SharpDomainInfo
                 {
                     string dNSHostName = (string)result.Properties["dNSHostName"][0];
                     Console.WriteLine(dNSHostName + " - " + GetIPAddress(dNSHostName));
-                    
+
                 }
 
                 if (result.Properties.Contains("operatingSystem"))
